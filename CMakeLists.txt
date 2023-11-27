@@ -55,9 +55,10 @@ include_directories(
         ${CMAKE_FIND_ROOT_PATH}/include
         ${PROJECT_SOURCE_DIR}/third_party/spdlog-1.x/include
         ${PROJECT_SOURCE_DIR}/third_party/eigen-3.4.0
-        ${PROJECT_SOURCE_DIR}
+        ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_BINARY_DIR}
 )
 
 add_subdirectory(third_party/eigen-3.4.0)
 add_subdirectory(third_party/spdlog-1.x)
+add_subdirectory(third_obs)
