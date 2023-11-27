@@ -28,13 +28,14 @@ void ThirdObs::set_target_bounding_box(const std::vector<_point_3d> &target_boun
     target_bounding_box_ = target_bounding_box;
 }
 
-bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<_point_2d> &points) const
+bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<_point_2d> &points, std::vector<_position_on_screen> &point_status) const
 {
     if (!model_.check())
     {
         return false;
     }
-    points.clear();
+    points.resize(target_bounding_box_.size());
+    point_status.resize(target_bounding_box_.size(), _position_on_screen::error);
 
     Eigen::MatrixXf points_target_tb(4, target_bounding_box_.size());
     for (auto &point : target_bounding_box_)
@@ -82,7 +83,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
     do
     {
         Eigen::Matrix4f R4 = Eigen::Matrix4f::Identity();
-        R4.block<3, 1>(0, 3) = -Eigen::Vector3f(model_.x_ob, model_.y_ob, model_.z_ob);
+        R4.block<3, 1>(0, 3) = -Eigen::Vector3f(model_.x_of_ob, model_.y_of_ob, model_.z_of_ob);
         points_target_of = R4 * points_target_ob;
     } while (false);
 
@@ -91,11 +92,128 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
     {
         Eigen::Matrix4f R4 = Eigen::Matrix4f::Identity();
         Eigen::Matrix3f Rz, Rx;
-        // Rz << std::sin()
-        R4.block<3, 1>(0, 3) = Eigen::Vector3f(model_.x_f, model_.y_f, model_.z_f);
-        points_target_f = R4 * points_target_of;
+        Rz << std::sin(model_.alpha_deg / 180.0f * PI), -std::cos(model_.alpha_deg / 180.0f * PI), 0,
+            std::cos(model_.alpha_deg / 180.0f * PI), std::sin(model_.alpha_deg / 180.0f * PI), 0,
+            0, 0, 1;
+        Rx << 1, 0, 0,
+            0, std::sin(model_.beta_deg / 180.0f * PI), -std::cos(model_.beta_deg / 180.0f * PI),
+            0, std::cos(model_.beta_deg / 180.0f * PI), std::sin(model_.beta_deg / 180.0f * PI);
+        Eigen::Matrix3f R = Rx * Rz;
+        R4.block<3, 3>(0, 0) = R;
+        R4.block<3, 1>(0, 3) = -R * Eigen::Vector3f(model_.x_oc_of, model_.y_oc_of, model_.z_oc_of);
+        points_target_oc = R4 * points_target_of;
     } while (false);
 
-    //
+    Eigen::MatrixXf points_target_c(4, target_bounding_box_.size());
+    do
+    {
+        Eigen::Matrix4f R4 = Eigen::Matrix4f::Identity();
+        R4.block<3, 1>(0, 3) = Eigen::Vector3f(model_.x_oc_of, model_.y_oc_of, model_.z_oc_of);
+        points_target_c = R4 * points_target_oc;
+    } while (false);
+
+    std::vector<float> alphas_c(target_bounding_box_.size(), 0.0f);
+    std::vector<float> betas_c(target_bounding_box_.size(), 0.0f);
+    for (std::size_t i = 0; i < target_bounding_box_.size(); i++)
+    {
+        if (points_target_c(0, i) > 0 && points_target_c(1, i) >= 0)
+        {
+            alphas_c[i] = (std::atan(points_target_c(1, i) / points_target_c(0, i)) * 180.0f / PI);
+        }
+        else if (points_target_c(0, i) <= 0 && points_target_c(1, i) >= 0)
+        {
+            alphas_c[i] = (std::atan(std::abs(points_target_c(0, i) / points_target_c(1, i))) * 180.0f / PI + 90.0f);
+        }
+        else if (points_target_c(0, i) < 0 && points_target_c(1, i) <= 0)
+        {
+            alphas_c[i] = (std::atan(std::abs(points_target_c(1, i) / points_target_c(0, i))) * 180.0f / PI + 180.0f);
+        }
+        else if (points_target_c(0, i) >= 0 && points_target_c(1, i) < 0)
+        {
+            alphas_c[i] = (std::atan(std::abs(points_target_c(0, i) / points_target_c(1, i))) * 180.0f / PI + 270.0f);
+        }
+        else
+        {
+            alphas_c[i] = (-180.0f);
+        }
+
+        if (points_target_c(0, i) != 0 || points_target_c(1, i) != 0)
+        {
+            betas_c[i] = std::atan(points_target_c(2, i) / std::sqrt(points_target_c(0, i) * points_target_c(0, i) + points_target_c(1, i) * points_target_c(1, i))) * 180.0f / PI;
+        }
+        else if (points_target_c(0, i) == 0 && points_target_c(1, i) == 0 && points_target_c(2, i) > 0)
+        {
+            betas_c[i] = 90.0f;
+        }
+        else if (points_target_c(0, i) == 0 && points_target_c(1, i) == 0 && points_target_c(2, i) < 0)
+        {
+            betas_c[i] = -90.0f;
+        }
+        else
+        {
+            betas_c[i] = -180.0f;
+        }
+
+        int up_down = 0;
+        int left_right = 0;
+        if (points_target_oc(2, i) <= -model_.fx / model_.cx * points_target_oc(0, i) && points_target_oc(0, i) < 0)
+        {
+            left_right = -1;
+        }
+        else if (points_target_oc(2, i) <= model_.fx / (model_.pix_width - model_.cx) * points_target_oc(0, i) && points_target_oc(0, i) > 0)
+        {
+            left_right = 1;
+        }
+        else if (points_target_oc(2, i) > model_.fx / (model_.pix_width - model_.cx) * points_target_oc(0, i) && points_target_oc(2, i) > -model_.fx / model_.cx * points_target_oc(0, i))
+        {
+            left_right = 0;
+        }
+        else
+        {
+            left_right = -2;
+        }
+
+        if (points_target_oc(2, i) <= -model_.fy / model_.cy * points_target_oc(1, i) && points_target_oc(1, i) < 0)
+        {
+            up_down = -1;
+        }
+        else if (points_target_oc(2, i) <= model_.fy / (model_.pix_height - model_.cy) * points_target_oc(1, i) && points_target_oc(1, i) > 0)
+        {
+            up_down = 1;
+        }
+        else if (points_target_oc(2, i) > model_.fy / (model_.pix_height - model_.cy) * points_target_oc(1, i) && points_target_oc(2, i) > -model_.fy / model_.cy * points_target_oc(1, i))
+        {
+            up_down = 0;
+        }
+        else
+        {
+            up_down = -2;
+        }
+
+        if (up_down == 0 && left_right == 0)
+        {
+            point_status[i] = _position_on_screen::center;
+        }
+    }
+
+    Eigen::MatrixXf points_target_pix(4, target_bounding_box_.size());
+    do
+    {
+        Eigen::Matrix4f R4 = Eigen::Matrix4f::Zero();
+        R4(0, 0) = model_.fx;
+        R4(0, 2) = model_.cx;
+        R4(1, 1) = model_.fy;
+        R4(1, 2) = model_.cy;
+        R4(2, 2) = 1;
+        Eigen::Matrix<float, 4, Eigen::Dynamic> points_target_pix_z = points_target_pix.row(2).replicate(points_target_pix.rows(), 1);
+        points_target_pix = R4 * (points_target_pix_z.cwiseQuotient(points_target_pix_z));
+    } while (false);
+
+    for (std::size_t i = 0; i < target_bounding_box_.size(); i++)
+    {
+        points[i].x = points_target_pix(0, i);
+        points[i].y = points_target_pix(1, i);
+    }
+
     return true;
 }
