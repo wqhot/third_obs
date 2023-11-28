@@ -62,3 +62,4 @@ include_directories(
 add_subdirectory(third_party/eigen-3.4.0)
 add_subdirectory(third_party/spdlog-1.x)
 add_subdirectory(third_obs)
+add_subdirectory(demos)

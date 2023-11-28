@@ -134,7 +134,7 @@ else()
   ei_add_property(EIGEN_MISSING_BACKENDS "SPQR, ")
 endif()
 
-option(EIGEN_TEST_NOQT "Disable Qt support in unit tests" OFF)
+option(EIGEN_TEST_NOQT "Disable Qt support in unit tests" ON)
 if(NOT EIGEN_TEST_NOQT)
   find_package(Qt4)
   if(QT4_FOUND)

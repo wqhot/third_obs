@@ -48,7 +48,7 @@ namespace third_obs
     class ThirdObs
     {
     public:
-        ThirdObs *get_instance();
+        static ThirdObs *get_instance();
         bool convert_once(const _pose camera, const _pose target, std::vector<_point_2d> &points, std::vector<_position_on_screen> &point_status) const;
         bool set_camera_model(const _camera_model &model);
         void set_target_bounding_box(const std::vector<_point_3d> &target_bounding_box);
