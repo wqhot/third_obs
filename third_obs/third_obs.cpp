@@ -1,11 +1,26 @@
 #include <third_obs.hh>
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/cfg/env.h>
+#include <spdlog/fmt/ostr.h>
 #include <cmath>
+#include <chrono>
 
 using namespace third_obs;
 
 const float PI = 3.1415926f;
+
+ThirdObs::ThirdObs()
+{
+    spdlog::cfg::load_env_levels();
+    auto console = spdlog::stdout_color_mt("THIRDOBS");
+    spdlog::set_default_logger(console);
+
+    spdlog::flush_every(std::chrono::seconds(1));
+}
 
 ThirdObs *ThirdObs::get_instance()
 {
@@ -17,6 +32,7 @@ bool ThirdObs::set_camera_model(const _camera_model &model)
 {
     if (!model.check())
     {
+        spdlog::warn("camera model error");
         return false;
     }
     model_ = model;
@@ -26,25 +42,32 @@ bool ThirdObs::set_camera_model(const _camera_model &model)
 void ThirdObs::set_target_bounding_box(const std::vector<_point_3d> &target_bounding_box)
 {
     target_bounding_box_ = target_bounding_box;
+    for (auto &p : target_bounding_box_)
+    {
+        spdlog::debug("target bounding box: [{}, {}, {}]", p.x, p.y, p.z);
+    }
 }
 
 bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<_point_2d> &points, std::vector<_position_on_screen> &point_status) const
 {
     if (!model_.check())
     {
+        spdlog::warn("camera model error");
         return false;
     }
     points.resize(target_bounding_box_.size());
     point_status.resize(target_bounding_box_.size(), _position_on_screen::error);
 
     Eigen::MatrixXf points_target_tb(4, target_bounding_box_.size());
-    for (auto &point : target_bounding_box_)
+    for (std::size_t i = 0; i < target_bounding_box_.size(); i++)
     {
-        points_target_tb(0, points_target_tb.cols() - 1) = point.x;
-        points_target_tb(1, points_target_tb.cols() - 1) = point.y;
-        points_target_tb(2, points_target_tb.cols() - 1) = point.z;
-        points_target_tb(3, points_target_tb.cols() - 1) = 1;
+        const _point_3d &point = target_bounding_box_[i];
+        points_target_tb(0, i) = point.x;
+        points_target_tb(1, i) = point.y;
+        points_target_tb(2, i) = point.z;
+        points_target_tb(3, i) = 1;
     }
+    spdlog::debug("points_target_tb inited: \n{}", points_target_tb);
 
     do
     {
@@ -57,6 +80,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
         R4.block<3, 3>(0, 0) = R;
         points_target_tb = R4 * points_target_tb;
     } while (false);
+    spdlog::debug("points_target_tb: \n{}", points_target_tb);
 
     Eigen::MatrixXf points_target_ol(4, target_bounding_box_.size());
     do
@@ -65,6 +89,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
         R4.block<3, 1>(0, 3) = Eigen::Vector3f(target.position.x - camera.position.x, target.position.y - camera.position.y, target.position.z - camera.position.z);
         points_target_ol = R4 * points_target_tb;
     } while (false);
+    spdlog::debug("points_target_ol: \n{}", points_target_ol);
 
     Eigen::MatrixXf points_target_ob(4, target_bounding_box_.size());
     do
@@ -78,6 +103,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
         R4.block<3, 3>(0, 0) = R;
         points_target_ob = R4 * points_target_ol;
     } while (false);
+    spdlog::debug("points_target_ob: \n{}", points_target_ob);
 
     Eigen::MatrixXf points_target_of(4, target_bounding_box_.size());
     do
@@ -86,6 +112,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
         R4.block<3, 1>(0, 3) = -Eigen::Vector3f(model_.x_of_ob, model_.y_of_ob, model_.z_of_ob);
         points_target_of = R4 * points_target_ob;
     } while (false);
+    spdlog::debug("points_target_of: \n{}", points_target_of);
 
     Eigen::MatrixXf points_target_oc(4, target_bounding_box_.size());
     do
@@ -103,14 +130,16 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
         R4.block<3, 1>(0, 3) = -R * Eigen::Vector3f(model_.x_oc_of, model_.y_oc_of, model_.z_oc_of);
         points_target_oc = R4 * points_target_of;
     } while (false);
+    spdlog::debug("points_target_oc: \n{}", points_target_oc);
 
     Eigen::MatrixXf points_target_c(4, target_bounding_box_.size());
     do
     {
         Eigen::Matrix4f R4 = Eigen::Matrix4f::Identity();
         R4.block<3, 1>(0, 3) = Eigen::Vector3f(model_.x_oc_of, model_.y_oc_of, model_.z_oc_of);
-        points_target_c = R4 * points_target_oc;
+        points_target_c = R4 * points_target_of;
     } while (false);
+    spdlog::debug("points_target_c: \n{}", points_target_c);
 
     std::vector<float> alphas_c(target_bounding_box_.size(), 0.0f);
     std::vector<float> betas_c(target_bounding_box_.size(), 0.0f);
@@ -194,6 +223,8 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
         {
             point_status[i] = _position_on_screen::center;
         }
+
+        spdlog::debug("[{}] Alpha: {}, Beta: {}", i, alphas_c[i], betas_c[i]);
     }
 
     Eigen::MatrixXf points_target_pix(4, target_bounding_box_.size());
@@ -205,9 +236,12 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
         R4(1, 1) = model_.fy;
         R4(1, 2) = model_.cy;
         R4(2, 2) = 1;
-        Eigen::Matrix<float, 4, Eigen::Dynamic> points_target_pix_z = points_target_pix.row(2).replicate(points_target_pix.rows(), 1);
-        points_target_pix = R4 * (points_target_pix_z.cwiseQuotient(points_target_pix_z));
+        spdlog::debug("camera intrinsics: \n{}", R4);
+        Eigen::Matrix<float, 4, Eigen::Dynamic> points_target_pix_z = points_target_oc.row(2).replicate(points_target_oc.rows(), 1);
+        spdlog::debug("points_target_pix_z: \n{}", points_target_pix_z);
+        points_target_pix = R4 * (points_target_oc.cwiseQuotient(points_target_pix_z));
     } while (false);
+    spdlog::debug("points_target_pix: \n{}", points_target_pix);
 
     for (std::size_t i = 0; i < target_bounding_box_.size(); i++)
     {
