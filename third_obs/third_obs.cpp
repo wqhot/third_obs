@@ -56,7 +56,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
         return false;
     }
     points.resize(target_bounding_box_.size());
-    point_status.resize(target_bounding_box_.size(), _position_on_screen::error);
+    point_status.resize(target_bounding_box_.size());
 
     Eigen::MatrixXf points_target_tb(4, target_bounding_box_.size());
     for (std::size_t i = 0; i < target_bounding_box_.size(); i++)
@@ -221,7 +221,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
 
         if (up_down == 0 && left_right == 0)
         {
-            point_status[i] = _position_on_screen::center;
+            point_status[i].is_center = true;
         }
 
         spdlog::debug("[{}] Alpha: {}, Beta: {}", i, alphas_c[i], betas_c[i]);
@@ -247,6 +247,10 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
     {
         points[i].x = points_target_pix(0, i);
         points[i].y = points_target_pix(1, i);
+        if (!point_status[i].is_center)
+        {
+            point_status[i].angle_deg = std::atan2(-points[i].y + model_.cy, points[i].x - model_.cx) * 180.0f / PI;
+        }
     }
 
     return true;

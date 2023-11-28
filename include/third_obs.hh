@@ -35,14 +35,12 @@ namespace third_obs
         _pose(float x, float y, float z, float yaw_deg, float pitch_deg, float roll_deg) : position(x, y, z), yaw_deg(yaw_deg), pitch_deg(pitch_deg), roll_deg(roll_deg) {}
     };
 
-    enum _position_on_screen
+    class _position_on_screen
     {
-        error = -1,
-        center = 0,
-        top_left,
-        top_right,
-        bottom_left,
-        bottom_right,
+    public:
+        bool is_center;
+        float angle_deg;
+        _position_on_screen(): is_center(false), angle_deg(0) {}
     };
 
     class ThirdObs

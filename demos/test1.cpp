@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     std::cout << "Points:" << std::endl;
     for (size_t i = 0; i < points_pix.size(); i++)
     {
-        std::cout << "[" << points_pix[i].x << ", " << points_pix[i].y << "]: " << points_status[i] << std::endl;
+        std::cout << "[" << points_pix[i].x << ", " << points_pix[i].y << "]: " << points_status[i].is_center << std::endl;
     }
 
     return 0;
