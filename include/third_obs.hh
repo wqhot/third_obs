@@ -3,7 +3,7 @@
 #include "camera_model.hh"
 #include <vector>
 
-namespace third_obs
+namespace softrender_point
 {
     class _point_3d
     {

@@ -1,0 +1,20 @@
+camera_type: PINEHOLE
+param_type: INTRINSICS
+pix_width: 1920
+pix_height: 1080
+
+camera_intrinscis:
+  fx: 960.0
+  fy: 960.0
+  cx: 960.0
+  cy: 960.0
+
+camera_extrinscis:
+  x_of_ob: 0.0
+  y_of_ob: 0.0
+  z_of_ob: 0.0
+  x_oc_of: 0.0
+  y_oc_of: 0.0
+  z_oc_of: 0.0
+  alpha_deg: 120.0
+  beta_deg: 0.0

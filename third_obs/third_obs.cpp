@@ -9,7 +9,7 @@
 #include <cmath>
 #include <chrono>
 
-using namespace third_obs;
+using namespace softrender_point;
 
 const float PI = 3.1415926f;
 
@@ -24,8 +24,8 @@ ThirdObs::ThirdObs()
 
 ThirdObs *ThirdObs::get_instance()
 {
-    static ThirdObs third_obs;
-    return &third_obs;
+    static ThirdObs softrender_point;
+    return &softrender_point;
 }
 
 bool ThirdObs::set_camera_model(const _camera_model &model)

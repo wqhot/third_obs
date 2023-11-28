@@ -1,11 +1,13 @@
 #ifndef _CMAERA_MODEL_HH
 #define _CMAERA_MODEL_HH
-
-namespace third_obs
+#include <string>
+namespace softrender_point
 {
     class _camera_model
     {
     public:
+        _camera_model(){};
+        _camera_model(const std::string &yaml_file_path);
         enum CAMERA_TYPE
         {
             PINEHOLE = 0, // 针孔
@@ -18,24 +20,24 @@ namespace third_obs
             FOV             // 使用视场角描述相机参数
         };
 
-        CAMERA_TYPE type_;             // 相机类型
+        CAMERA_TYPE type_;            // 相机类型
         CAMERA_PARAM_TYPE param_type; // 相机参数类型
         unsigned int pix_width;       // 像素宽度
         unsigned int pix_height;      // 像素高度
-        float fx;                      // 相机内参-fx（INTRINSICS）
-        float fy;                      // 相机内参-fy（INTRINSICS）
-        float cx;                      // 相机内参-cx（INTRINSICS）
-        float cy;                      // 相机内参-cy（INTRINSICS）
-        float h_fov_deg;               // 水平视场角角度（FOV）
-        float v_fov_deg;               // 垂直视场角角度（FOV）
-        float x_of_ob;                    // 相机外参-x_of_ob
-        float y_of_ob;                    // 相机外参-y_of_ob
-        float z_of_ob;                    // 相机外参-z_of_ob
-        float x_oc_of;                    // 相机外参-x_oc_of
-        float y_oc_of;                    // 相机外参-y_oc_of
-        float z_oc_of;                    // 相机外参-z_oc_of
-        float alpha_deg;                   // 相机外参-alpha
-        float beta_deg;                    // 相机外参-beta
+        float fx;                     // 相机内参-fx（INTRINSICS）
+        float fy;                     // 相机内参-fy（INTRINSICS）
+        float cx;                     // 相机内参-cx（INTRINSICS）
+        float cy;                     // 相机内参-cy（INTRINSICS）
+        float h_fov_deg;              // 水平视场角角度（FOV）
+        float v_fov_deg;              // 垂直视场角角度（FOV）
+        float x_of_ob;                // 相机外参-x_of_ob
+        float y_of_ob;                // 相机外参-y_of_ob
+        float z_of_ob;                // 相机外参-z_of_ob
+        float x_oc_of;                // 相机外参-x_oc_of
+        float y_oc_of;                // 相机外参-y_oc_of
+        float z_oc_of;                // 相机外参-z_oc_of
+        float alpha_deg;              // 相机外参-alpha
+        float beta_deg;               // 相机外参-beta
 
         bool check() const
         {
