@@ -1,4 +1,4 @@
-#include <third_obs.hh>
+#include <softrender_point.hh>
 #include <iostream>
 #include <vector>
 
@@ -6,7 +6,7 @@ int main(int argc, char *argv[])
 {
     softrender_point::_camera_model camera(argv[1]);
 
-    if (!softrender_point::ThirdObs::get_instance()->set_camera_model(camera))
+    if (!softrender_point::_softrendr_point::get_instance()->set_camera_model(camera))
     {
         std::cout << "camera params error" << std::endl;
         return -1;
@@ -31,11 +31,11 @@ int main(int argc, char *argv[])
         {-3.f / 2, -5.f / 2, -2.f / 2},
     };
 
-    softrender_point::ThirdObs::get_instance()->set_target_bounding_box(bounding_box_points);
+    softrender_point::_softrendr_point::get_instance()->set_target_points(bounding_box_points);
 
     std::vector<softrender_point::_point_2d> points_pix;
     std::vector<softrender_point::_position_on_screen> points_status;
-    softrender_point::ThirdObs::get_instance()->convert_once(car_pose, target_pose, points_pix, points_status);
+    softrender_point::_softrendr_point::get_instance()->convert_once(car_pose, target_pose, points_pix, points_status);
 
     std::cout << "Points:" << std::endl;
     for (size_t i = 0; i < points_pix.size(); i++)

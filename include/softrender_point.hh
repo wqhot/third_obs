@@ -43,18 +43,18 @@ namespace softrender_point
         _position_on_screen(): is_center(false), angle_deg(0) {}
     };
 
-    class ThirdObs
+    class _softrendr_point
     {
     public:
-        ThirdObs();
-        static ThirdObs *get_instance();
+        _softrendr_point();
+        static _softrendr_point *get_instance();
         bool convert_once(const _pose camera, const _pose target, std::vector<_point_2d> &points, std::vector<_position_on_screen> &point_status) const;
         bool set_camera_model(const _camera_model &model);
-        void set_target_bounding_box(const std::vector<_point_3d> &target_bounding_box);
+        void set_target_points(const std::vector<_point_3d> &target_points);
 
     private:
         _camera_model model_;
-        std::vector<_point_3d> target_bounding_box_;
+        std::vector<_point_3d> target_points_;
     };
 };
 

@@ -1,4 +1,4 @@
-#include <third_obs.hh>
+#include <softrender_point.hh>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <spdlog/spdlog.h>
@@ -13,7 +13,7 @@ using namespace softrender_point;
 
 const float PI = 3.1415926f;
 
-ThirdObs::ThirdObs()
+_softrendr_point::_softrendr_point()
 {
     spdlog::cfg::load_env_levels();
     auto console = spdlog::stdout_color_mt("THIRDOBS");
@@ -22,13 +22,13 @@ ThirdObs::ThirdObs()
     spdlog::flush_every(std::chrono::seconds(1));
 }
 
-ThirdObs *ThirdObs::get_instance()
+_softrendr_point *_softrendr_point::get_instance()
 {
-    static ThirdObs softrender_point;
+    static _softrendr_point softrender_point;
     return &softrender_point;
 }
 
-bool ThirdObs::set_camera_model(const _camera_model &model)
+bool _softrendr_point::set_camera_model(const _camera_model &model)
 {
     if (!model.check())
     {
@@ -39,29 +39,29 @@ bool ThirdObs::set_camera_model(const _camera_model &model)
     return true;
 }
 
-void ThirdObs::set_target_bounding_box(const std::vector<_point_3d> &target_bounding_box)
+void _softrendr_point::set_target_points(const std::vector<_point_3d> &target_points)
 {
-    target_bounding_box_ = target_bounding_box;
-    for (auto &p : target_bounding_box_)
+    target_points_ = target_points;
+    for (auto &p : target_points_)
     {
         spdlog::debug("target bounding box: [{}, {}, {}]", p.x, p.y, p.z);
     }
 }
 
-bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<_point_2d> &points, std::vector<_position_on_screen> &point_status) const
+bool _softrendr_point::convert_once(const _pose camera, const _pose target, std::vector<_point_2d> &points, std::vector<_position_on_screen> &point_status) const
 {
     if (!model_.check())
     {
         spdlog::warn("camera model error");
         return false;
     }
-    points.resize(target_bounding_box_.size());
-    point_status.resize(target_bounding_box_.size());
+    points.resize(target_points_.size());
+    point_status.resize(target_points_.size());
 
-    Eigen::MatrixXf points_target_tb(4, target_bounding_box_.size());
-    for (std::size_t i = 0; i < target_bounding_box_.size(); i++)
+    Eigen::MatrixXf points_target_tb(4, target_points_.size());
+    for (std::size_t i = 0; i < target_points_.size(); i++)
     {
-        const _point_3d &point = target_bounding_box_[i];
+        const _point_3d &point = target_points_[i];
         points_target_tb(0, i) = point.x;
         points_target_tb(1, i) = point.y;
         points_target_tb(2, i) = point.z;
@@ -82,7 +82,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
     } while (false);
     spdlog::debug("points_target_tb: \n{}", points_target_tb);
 
-    Eigen::MatrixXf points_target_ol(4, target_bounding_box_.size());
+    Eigen::MatrixXf points_target_ol(4, target_points_.size());
     do
     {
         Eigen::Matrix4f R4 = Eigen::Matrix4f::Identity();
@@ -91,7 +91,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
     } while (false);
     spdlog::debug("points_target_ol: \n{}", points_target_ol);
 
-    Eigen::MatrixXf points_target_ob(4, target_bounding_box_.size());
+    Eigen::MatrixXf points_target_ob(4, target_points_.size());
     do
     {
         Eigen::AngleAxisf angle_axis_yaw(camera.yaw_deg / 180.0f * PI, Eigen::Vector3f::UnitZ());
@@ -105,7 +105,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
     } while (false);
     spdlog::debug("points_target_ob: \n{}", points_target_ob);
 
-    Eigen::MatrixXf points_target_of(4, target_bounding_box_.size());
+    Eigen::MatrixXf points_target_of(4, target_points_.size());
     do
     {
         Eigen::Matrix4f R4 = Eigen::Matrix4f::Identity();
@@ -114,7 +114,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
     } while (false);
     spdlog::debug("points_target_of: \n{}", points_target_of);
 
-    Eigen::MatrixXf points_target_oc(4, target_bounding_box_.size());
+    Eigen::MatrixXf points_target_oc(4, target_points_.size());
     do
     {
         Eigen::Matrix4f R4 = Eigen::Matrix4f::Identity();
@@ -132,7 +132,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
     } while (false);
     spdlog::debug("points_target_oc: \n{}", points_target_oc);
 
-    Eigen::MatrixXf points_target_c(4, target_bounding_box_.size());
+    Eigen::MatrixXf points_target_c(4, target_points_.size());
     do
     {
         Eigen::Matrix4f R4 = Eigen::Matrix4f::Identity();
@@ -141,9 +141,9 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
     } while (false);
     spdlog::debug("points_target_c: \n{}", points_target_c);
 
-    std::vector<float> alphas_c(target_bounding_box_.size(), 0.0f);
-    std::vector<float> betas_c(target_bounding_box_.size(), 0.0f);
-    for (std::size_t i = 0; i < target_bounding_box_.size(); i++)
+    std::vector<float> alphas_c(target_points_.size(), 0.0f);
+    std::vector<float> betas_c(target_points_.size(), 0.0f);
+    for (std::size_t i = 0; i < target_points_.size(); i++)
     {
         if (points_target_c(0, i) > 0 && points_target_c(1, i) >= 0)
         {
@@ -227,7 +227,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
         spdlog::debug("[{}] Alpha: {}, Beta: {}", i, alphas_c[i], betas_c[i]);
     }
 
-    Eigen::MatrixXf points_target_pix(4, target_bounding_box_.size());
+    Eigen::MatrixXf points_target_pix(4, target_points_.size());
     do
     {
         Eigen::Matrix4f R4 = Eigen::Matrix4f::Zero();
@@ -243,7 +243,7 @@ bool ThirdObs::convert_once(const _pose camera, const _pose target, std::vector<
     } while (false);
     spdlog::debug("points_target_pix: \n{}", points_target_pix);
 
-    for (std::size_t i = 0; i < target_bounding_box_.size(); i++)
+    for (std::size_t i = 0; i < target_points_.size(); i++)
     {
         points[i].x = points_target_pix(0, i);
         points[i].y = points_target_pix(1, i);
