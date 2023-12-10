@@ -42,10 +42,10 @@ foreach(target IN LISTS EIGEN_BLAS_TARGETS)
   endif()
 
   add_dependencies(blas ${target})
-  install(TARGETS ${target}
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
+#   install(TARGETS ${target}
+#           RUNTIME DESTINATION bin
+#           LIBRARY DESTINATION lib
+#           ARCHIVE DESTINATION lib)
 endforeach()
 
 if(EIGEN_Fortran_COMPILER_WORKS)

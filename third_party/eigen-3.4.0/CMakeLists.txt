@@ -461,19 +461,19 @@ macro(ei_add_target_property target prop value)
   set_target_properties(${target} PROPERTIES ${prop} "${previous} ${value}")
 endmacro()
 
-install(FILES
-  signature_of_eigen3_matrix_library
-  DESTINATION ${INCLUDE_INSTALL_DIR} COMPONENT Devel
-  )
+# install(FILES
+#   signature_of_eigen3_matrix_library
+#   DESTINATION ${INCLUDE_INSTALL_DIR} COMPONENT Devel
+#   )
 
 if(EIGEN_BUILD_PKGCONFIG)
     configure_file(eigen3.pc.in eigen3.pc @ONLY)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/eigen3.pc
-        DESTINATION ${PKGCONFIG_INSTALL_DIR}
-        )
+    # install(FILES ${CMAKE_CURRENT_BINARY_DIR}/eigen3.pc
+    #     DESTINATION ${PKGCONFIG_INSTALL_DIR}
+    #     )
 endif()
 
-install(DIRECTORY Eigen DESTINATION ${INCLUDE_INSTALL_DIR} COMPONENT Devel)
+# install(DIRECTORY Eigen DESTINATION ${INCLUDE_INSTALL_DIR} COMPONENT Devel)
 
 
 option(EIGEN_BUILD_DOC "Enable creation of Eigen documentation" ON)
@@ -610,7 +610,7 @@ target_include_directories (eigen INTERFACE
 # Export as title case Eigen
 set_target_properties (eigen PROPERTIES EXPORT_NAME Eigen)
 
-install (TARGETS eigen EXPORT Eigen3Targets)
+# install (TARGETS eigen EXPORT Eigen3Targets)
 
 configure_package_config_file (
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Eigen3Config.cmake.in
@@ -637,12 +637,12 @@ export (TARGETS eigen NAMESPACE Eigen3:: FILE Eigen3Targets.cmake)
 # CMake even if it has not been installed to a standard directory.
 export (PACKAGE Eigen3)
 
-install (EXPORT Eigen3Targets NAMESPACE Eigen3:: DESTINATION ${CMAKEPACKAGE_INSTALL_DIR})
+# install (EXPORT Eigen3Targets NAMESPACE Eigen3:: DESTINATION ${CMAKEPACKAGE_INSTALL_DIR})
 
-install ( FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/UseEigen3.cmake
-                ${CMAKE_CURRENT_BINARY_DIR}/Eigen3Config.cmake
-                ${CMAKE_CURRENT_BINARY_DIR}/Eigen3ConfigVersion.cmake
-          DESTINATION ${CMAKEPACKAGE_INSTALL_DIR} )
+# install ( FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/UseEigen3.cmake
+#                 ${CMAKE_CURRENT_BINARY_DIR}/Eigen3Config.cmake
+#                 ${CMAKE_CURRENT_BINARY_DIR}/Eigen3ConfigVersion.cmake
+#           DESTINATION ${CMAKEPACKAGE_INSTALL_DIR} )
 
 # Add uninstall target
 add_custom_target ( uninstall
